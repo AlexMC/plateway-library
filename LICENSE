@@ -1,0 +1,18 @@
+Plateway community library: licence notice
+
+Items (everything under pieces/, trains/ and furniture/)
+
+Each item is licensed under the Creative Commons Attribution 4.0 International licence (CC BY 4.0),
+https://creativecommons.org/licenses/by/4.0/, by its contributor. A train model adapted from another CC BY model keeps
+that model's CC BY licence (2.0, 2.5, 3.0 or 4.0) and credits its authors; the item's metadata.json gives the licence
+under "licence" and the source under "source".
+
+Attribution: credit the contributor by the name in the item's pull request and in the Plateway library index (and,
+for an adapted model, the source's authors), name the licence and link to it, and say if you changed the item.
+
+Contributors confirmed, when uploading, that they have the right to share their item under its licence.
+
+Tooling (check.py, check_items.py, .github/)
+
+Copied from Plateway (https://github.com/AlexMC/plateway) and licensed under the GNU Affero General Public License,
+version 3, as Plateway is.
