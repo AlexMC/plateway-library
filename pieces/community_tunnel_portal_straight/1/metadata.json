@@ -1,0 +1,24 @@
+{
+  "id": "community_tunnel_portal_straight",
+  "name": "Tunnel portal straight",
+  "ends": [
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 9.6,
+      "heading": 3.141592653589793
+    },
+    {
+      "x": 128.0,
+      "y": 0.0,
+      "z": 9.6,
+      "heading": 0.0
+    }
+  ],
+  "source": {
+    "url": "https://www.printables.com/model/466240-lego-compatible-straight-rerailer",
+    "authors": [
+      "lev"
+    ]
+  }
+}
