@@ -1,0 +1,24 @@
+{
+  "id": "community_plate_girder_bridge_straight",
+  "name": "Plate-girder bridge straight",
+  "ends": [
+    {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 9.6,
+      "heading": 3.141592653589793
+    },
+    {
+      "x": 144.0,
+      "y": 0.0,
+      "z": 9.6,
+      "heading": 0.0
+    }
+  ],
+  "source": {
+    "url": "https://www.printables.com/model/466240-lego-compatible-straight-rerailer",
+    "authors": [
+      "lev"
+    ]
+  }
+}
