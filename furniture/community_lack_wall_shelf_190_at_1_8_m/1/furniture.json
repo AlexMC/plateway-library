@@ -1,0 +1,93 @@
+{
+  "family": "community_lack_wall_shelf_190_at_1_8_m",
+  "label": "LACK wall shelf 190 at 1.8 m",
+  "width": 1900,
+  "depth": 260,
+  "height": 1800,
+  "surfaces": [
+    {
+      "id": "top",
+      "name": "top",
+      "height": 1800,
+      "footprint": [
+        {
+          "x": -950.0,
+          "y": -130.0
+        },
+        {
+          "x": 950.0,
+          "y": -130.0
+        },
+        {
+          "x": 950.0,
+          "y": 130.0
+        },
+        {
+          "x": -950.0,
+          "y": 130.0
+        }
+      ],
+      "entries": [
+        {
+          "id": "front",
+          "a": {
+            "x": -950.0,
+            "y": -130.0
+          },
+          "b": {
+            "x": 950.0,
+            "y": -130.0
+          },
+          "heading": 1.5707963267948966
+        },
+        {
+          "id": "left",
+          "a": {
+            "x": -950.0,
+            "y": -130.0
+          },
+          "b": {
+            "x": -950.0,
+            "y": 130.0
+          },
+          "heading": 0
+        },
+        {
+          "id": "right",
+          "a": {
+            "x": 950.0,
+            "y": -130.0
+          },
+          "b": {
+            "x": 950.0,
+            "y": 130.0
+          },
+          "heading": 3.141592653589793
+        }
+      ]
+    }
+  ],
+  "panels": [
+    {
+      "x": 0,
+      "y": 0,
+      "z": 1775.0,
+      "width": 1900,
+      "depth": 260,
+      "height": 50
+    }
+  ],
+  "orientations": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "colour": 15921903,
+  "plan": {
+    "lines": [],
+    "caption": "LACK shelf · top at 1.8 m"
+  },
+  "terms": "community_lack_wall_shelf_190_at_1_8_m lack wall shelf ikea around the room high",
+  "description": "LACK wall shelf 190, top 1.8 m up"
+}
