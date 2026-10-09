@@ -26,9 +26,11 @@ furniture/<id>/<version>/furniture.json   a Plateway FurnitureType
 <kind folder>/<id>/<version>/metadata.json
 ```
 
-Ids are `community_` then lowercase letters, digits and `_`. `metadata.json` holds the name and, for a piece, its two
-marked ends; for a train, the set facts and car measurements, its licence and, for a model adapted from another CC BY
-model, that model's source and authors. The Plateway README ("Community library") describes the formats.
+Ids are `community_` then lowercase letters, digits and `_`. A piece prints as uploaded, so it must fit the A1 mini
+as Plateway arranges it: at most 166 × 166 mm in plan (its 180 mm bed less a 7 mm margin each side) and 180 mm high.
+`metadata.json` holds the name and, for a piece, its two marked ends; for a train, the set facts and car measurements
+and its licence. An item adapted from another CC BY model also holds that model's source and authors under `source`.
+The Plateway README ("Community library") describes the formats.
 
 ## The check
 
@@ -45,4 +47,4 @@ python check_items.py --root . pieces/community_example/1
 ## Licence
 
 See `LICENSE`. Each item is shared under CC BY 4.0, or for a train model adapted from another CC BY model, that
-model's CC BY licence, as its `metadata.json` says.
+model's CC BY licence, as its `metadata.json` says. An adapted piece stays CC BY 4.0 and credits its source's authors.
