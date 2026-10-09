@@ -10,16 +10,20 @@ prints what was checked and exits 0, or prints why the item is refused and exits
 metadata)` returns a summary or raises `Refused` with a message for the contributor.
 
 Metadata, per kind (an `id`, when given, is a library id: `community_` then lowercase letters, digits and `_`):
-- piece: `name` and `ends`, the two marked ends `{x, y, z, heading}` in the STL's frame (README "Community library").
+- piece: `name` and `ends`, the two marked ends `{x, y, z, heading}` in the STL's frame (README "Community library"); a
+  piece adapted from a CC BY model also has that model's `source` `{url, authors}` (a piece is always CC BY 4.0).
 - train: `name`, `year`, `power`, `gauge`, `car` (the index's car measurements) and `licence`; a model adapted from
   another CC BY model also has `source` `{url, authors}` and keeps that model's CC BY licence (R17).
 - furniture: `name`; the file is the `FurnitureType` JSON (src/domain/furniture.ts) and its `family` is the `id`.
 
 A piece is checked in this order, cheapest first: the byte length against the triangle count (binary STL only), the
-mesh (closed, consistently wound, positive volume, one part), its size (10 mm to the A1 mini bed), then its marked ends
-against its end faces. The connector grid: a marked end sits where a track connector's centre does, in the middle of
-its end face (a connector's stud columns are symmetric about the centreline; the face is at least two studs wide), at
-rail height (the highest point of the piece within a connector's half-width of it), facing straight out of the face. The app's ends editor
+mesh (closed, consistently wound, positive volume, one part), its size (10 mm up to what the A1 mini prints: 166 mm
+across in plan, 180 mm high), then its marked ends against its end faces. The connector grid: a marked end sits where a
+track connector's centre does, in the middle of its end face (a connector's stud columns are symmetric about the
+centreline; the face is at least two studs wide), at rail height (the highest point of the piece within a connector's
+half-width of it), facing straight out of the face.
+An end face is everything in the end's plane facing out of it, taken together: a connector's tongue and socket cut it
+into separate pieces, and its width is their combined span across the track. The app's ends editor
 (src/contribute/ends.ts) snaps a click to that point by the same rules.
 """
 from __future__ import annotations
@@ -38,6 +42,9 @@ PIECE_TRIANGLES = 200_000
 PIECE_SMALLEST = 10.0
 # The A1 mini's bed, the smallest printer Plateway prepares for (mm).
 BED = 180.0
+# The widest plan footprint its arrange places: the bed less a 7 mm margin each side (cad/service/plates.py `_shelves`;
+# tests/test_library_check.py holds them together). A piece prints as uploaded, never turned to fit.
+PIECE_PLAN = BED - 2 * 7.0
 # A train car's model budget: the built-in catalogue's (tests/test_trains.py, scripts/trains/validate.py).
 TRAIN_BYTES = 250_000
 TRAIN_TRIANGLES = 12_000
@@ -152,6 +159,9 @@ def _size_problem(size: np.ndarray) -> None:
     if (size > BED + 1e-6).any():
         raise Refused(f'The piece is {" × ".join(_mm(float(value)) for value in size)}: larger than the A1 mini bed '
                       f'({BED:.0f} mm). Was it exported in another unit?')
+    if (size[:2] > PIECE_PLAN + 1e-6).any():
+        raise Refused(f'The piece is {" × ".join(_mm(float(value)) for value in size)}: the A1 mini fits at most '
+                      f'{_mm(PIECE_PLAN)} × {_mm(PIECE_PLAN)} in plan (its {_mm(BED)} bed less a 7 mm margin each side).')
 
 
 def _ends(metadata: dict) -> list[dict]:
@@ -192,43 +202,21 @@ def ends_problem(start: dict, end: dict) -> str | None:
     return None
 
 
-def end_face(vertices: np.ndarray, faces: np.ndarray, normals: np.ndarray, heading: float, offset: float,
-             lateral: float) -> tuple[float, float] | None:
-    """The end face an end at `offset` along `heading` and `lateral` across it lies on: the connected faces in that
-    plane facing out along `heading`. Returns the face's lateral middle and its width, or None."""
+def end_face(vertices: np.ndarray, faces: np.ndarray, normals: np.ndarray, heading: float,
+             offset: float) -> tuple[float, float] | None:
+    """The end face in the plane at `offset` along `heading`: every face in that plane facing out along `heading`,
+    taken together, since a connector's tongue and socket cut it into separate pieces. Returns its lateral middle and its
+    width (its span across `heading`), or None when nothing in that plane faces that way."""
     d = np.array([math.cos(heading), math.sin(heading)])
     across = np.array([-d[1], d[0]])
     planar = normals[:, :2] @ d >= END_FACE_COSINE
     along = vertices[:, :2] @ d
     planar &= (np.abs(along[faces] - offset) <= END_FACE_OFFSET).all(axis=1)
-    chosen = np.flatnonzero(planar)
-    if not len(chosen):
+    if not planar.any():
         return None
-    parent = {int(v): int(v) for v in np.unique(faces[chosen])}
-
-    def root(v: int) -> int:
-        while parent[v] != v:
-            parent[v] = parent[parent[v]]
-            v = parent[v]
-        return v
-
-    for a, b, c in faces[chosen]:
-        for u, w in ((a, b), (b, c)):
-            ru, rw = root(int(u)), root(int(w))
-            if ru != rw:
-                parent[ru] = rw
-    groups: dict[int, list[int]] = {}
-    for v in parent:
-        groups.setdefault(root(v), []).append(v)
-    best = None
-    for members in groups.values():
-        side = vertices[members][:, :2] @ across
-        low, high = float(side.min()), float(side.max())
-        if low - END_TOLERANCE <= lateral <= high + END_TOLERANCE:
-            middle = (low + high) / 2
-            if best is None or abs(middle - lateral) < abs(best[0] - lateral):
-                best = (middle, high - low)
-    return best
+    side = vertices[np.unique(faces[planar])][:, :2] @ across
+    low, high = float(side.min()), float(side.max())
+    return (low + high) / 2, high - low
 
 
 def rail_top(vertices: np.ndarray, x: float, y: float) -> float:
@@ -241,9 +229,9 @@ def _check_end(mesh, index: int, end: dict) -> None:
     vertices, faces, normals = np.asarray(mesh.vertices), np.asarray(mesh.faces), np.asarray(mesh.face_normals)
     d = (math.cos(end['heading']), math.sin(end['heading']))
     offset, lateral = end['x'] * d[0] + end['y'] * d[1], -end['x'] * d[1] + end['y'] * d[0]
-    face = end_face(vertices, faces, normals, end['heading'], offset, lateral)
+    face = end_face(vertices, faces, normals, end['heading'], offset)
     if face is None:
-        if end_face(vertices, faces, normals, end['heading'] + math.pi, -offset, -lateral) is not None:
+        if end_face(vertices, faces, normals, end['heading'] + math.pi, -offset) is not None:
             raise Refused(f'End {index} points into the piece: flip its arrow.')
         raise Refused(f'End {index} is not on the boundary of the mesh: mark it on an end face.')
     middle, width = face
@@ -270,9 +258,11 @@ def check_piece(data: bytes, metadata: object) -> dict:
     problem = ends_problem(*ends)
     if problem:
         raise Refused(problem)
-    unknown = set(metadata) - {'id', 'name', 'ends'}
+    unknown = set(metadata) - {'id', 'name', 'ends', 'source'}
     if unknown:
         raise Refused(f'Unknown piece metadata: {", ".join(sorted(unknown))}.')
+    if metadata.get('source') is not None:
+        _source(metadata['source'])
     return {'triangles': len(triangles), 'size': [round(float(v), 2) for v in high - low]}
 
 
@@ -415,12 +405,8 @@ def measure_train(data: bytes, couplers: dict) -> dict:
             'outline': [[round(x, 1), round(y, 1)] for x, y in outline], 'triangles': len(triangles)}
 
 
-def _licence(metadata: dict) -> None:
-    source, licence = metadata.get('source'), metadata.get('licence')
-    if source is None:
-        if licence != ORIGINAL_LICENCE:
-            raise Refused('A model of your own is shared under CC BY 4.0.')
-        return
+def _source(source: object) -> None:
+    """A CC BY model's web address and authors, for an item adapted from it (`source` in a piece's or train's metadata)."""
     if not isinstance(source, dict) or set(source) - {'url', 'authors'}:
         raise Refused('The source must give its URL and authors.')
     url = source.get('url')
@@ -430,6 +416,15 @@ def _licence(metadata: dict) -> None:
     if (not isinstance(authors, list) or not authors or len(authors) > 20 or
             not all(isinstance(author, str) and author.strip() and len(author) <= TEXT_MAX for author in authors)):
         raise Refused("An adapted model needs its source's authors.")
+
+
+def _licence(metadata: dict) -> None:
+    source, licence = metadata.get('source'), metadata.get('licence')
+    if source is None:
+        if licence != ORIGINAL_LICENCE:
+            raise Refused('A model of your own is shared under CC BY 4.0.')
+        return
+    _source(source)
     if licence not in ADAPTED_LICENCES:
         raise Refused(f'An adapted model keeps its source\'s CC BY licence: one of {", ".join(ADAPTED_LICENCES)}.')
 
