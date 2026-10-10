@@ -67,7 +67,7 @@ END_FACE_OFFSET = 0.3
 # Two studs: an end face is a connector's width, not one facet of a curved side wall.
 END_FACE_WIDTH = 16.0
 END_TOLERANCE = 0.5
-# Half a LEGO track's width (cad/profiles/lego-compatible-v1.json `bodyWidth`): the rails at an end lie within it.
+# Half a brick track's width (cad/profiles/lego-compatible-v1.json `bodyWidth`): the rails at an end lie within it.
 RAIL_REACH = 32.0
 LEVEL = 0.5
 SHORTEST = 16.0
@@ -470,7 +470,7 @@ def check_train(data: bytes, metadata: object) -> dict:
     if car.get('triangles') != len(triangles):
         raise Refused(f'The car says {car.get("triangles")} triangles, but its model has {len(triangles)}.')
     if car['width'] > TRAIN_WIDEST:
-        raise Refused(f'The car is {_mm(car["width"])} wide; LEGO trains are at most {_mm(TRAIN_WIDEST)}.')
+        raise Refused(f'The car is {_mm(car["width"])} wide; brick trains are at most {_mm(TRAIN_WIDEST)}.')
     points = triangles.reshape(-1, 3)
     low, high = points.min(0), points.max(0)
     if (abs(float(high[1] - low[1]) - car['width']) >= TRAIN_FIT or abs(float(high[2]) - car['height']) >= TRAIN_FIT or
